@@ -42,6 +42,8 @@ impl SsTableIterator {
         let mut blk_idx = table.find_block_idx(key);
         let mut blk_iter =
             BlockIterator::create_and_seek_to_key(table.read_block_cached(blk_idx)?, key);
+        // this can be invalid here because after we tried to seek to the key above, we may have reached
+        // the end of the iterator as the key didn't exist and was greater than all other elements in the block.
         if !blk_iter.is_valid() {
             blk_idx += 1;
             if blk_idx < table.num_of_blocks() {
@@ -63,6 +65,8 @@ impl SsTableIterator {
         let mut blk_idx = self.table.find_block_idx(key);
         let mut blk_iter =
             BlockIterator::create_and_seek_to_key(self.table.read_block_cached(blk_idx)?, key);
+        // this can be invalid here because after we tried to seek to the key above, we may have reached
+        // the end of the iterator as the key didn't exist and was greater than all other elements in the block.
         if !blk_iter.is_valid() {
             blk_idx += 1;
             if blk_idx < self.table.num_of_blocks() {
