@@ -32,6 +32,8 @@ impl SsTableIterator {
         let blk_idx = 0;
         let blk_iter =
             BlockIterator::create_and_seek_to_first(self.table.read_block_cached(blk_idx)?);
+        self.blk_idx = blk_idx;
+        self.blk_iter = blk_iter;
         Ok(())
     }
 
@@ -64,13 +66,12 @@ impl SsTableIterator {
         if !blk_iter.is_valid() {
             blk_idx += 1;
             if blk_idx < self.table.num_of_blocks() {
-                blk_iter = BlockIterator::create_and_seek_to_first(
-                    self.table.read_block_cached(self.blk_idx)?,
-                );
+                blk_iter =
+                    BlockIterator::create_and_seek_to_first(self.table.read_block_cached(blk_idx)?);
             }
         }
-        self.blk_idx = blk_idx;
         self.blk_iter = blk_iter;
+        self.blk_idx = blk_idx;
         Ok(())
     }
 }
