@@ -207,14 +207,24 @@ impl SsTable {
 
     /// Read a block from the disk.
     pub fn read_block(&self, block_idx: usize) -> Result<Arc<Block>> {
-        let offset = self.block_meta[block_idx].offset;
-        let offset_end = self
-            .block_meta
-            .get(block_idx + 1)
-            .map_or(self.block_meta_offset, |x| x.offset);
+        // Remember, meta blocks are after data blocks (|block1, block2, ...|meta_block_1,meta_block_2...|meta_block_start_offset)
+        let start_offset = self.block_meta[block_idx].offset;
+
+        // for the end offset, we need to know where this block metadata ends, or in other words, when the next block
+        // metadata starts
+        let next_block_meta = self.block_meta.get(block_idx + 1);
+        let end_offset;
+        if let Some(meta) = next_block_meta {
+            end_offset = meta.offset;
+        } else {
+            // if there's no next meta block, it means that we are reading the last block. In this case, the end offset
+            // will be where all the blocks end inside the SSTable, or in other words, when the block meta starts.
+            end_offset = self.block_meta_offset;
+        }
+    
         let block_data = self
             .file
-            .read(offset as u64, (offset_end - offset) as u64)?;
+            .read(start_offset as u64, (end_offset - start_offset) as u64)?;
         Ok(Arc::new(Block::decode(&block_data[..])))
     }
 
