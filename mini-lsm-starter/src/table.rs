@@ -221,7 +221,7 @@ impl SsTable {
             // will be where all the blocks end inside the SSTable, or in other words, when the block meta starts.
             end_offset = self.block_meta_offset;
         }
-    
+
         let block_data = self
             .file
             .read(start_offset as u64, (end_offset - start_offset) as u64)?;

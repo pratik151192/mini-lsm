@@ -1,7 +1,7 @@
 #![allow(unused_variables)] // TODO(you): remove this lint after implementing this mod
 #![allow(dead_code)] // TODO(you): remove this lint after implementing this mod
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 
 use super::StorageIterator;
 
@@ -10,7 +10,7 @@ use super::StorageIterator;
 pub struct TwoMergeIterator<A: StorageIterator, B: StorageIterator> {
     a: A,
     b: B,
-    // Add fields as need
+    a_is_current: bool,
 }
 
 impl<
@@ -19,7 +19,37 @@ impl<
     > TwoMergeIterator<A, B>
 {
     pub fn create(a: A, b: B) -> Result<Self> {
-        unimplemented!()
+        let mut two_merged_iterator = Self {
+            a_is_current: false,
+            a,
+            b,
+        };
+
+        two_merged_iterator.advance_b_for_duplicate()?;
+        two_merged_iterator.a_is_current =
+            Self::a_is_current(&two_merged_iterator.a, &two_merged_iterator.b);
+        Ok((two_merged_iterator))
+    }
+
+    fn a_is_current(a: &A, b: &B) -> bool {
+        if !a.is_valid() {
+            return false;
+        }
+
+        if !b.is_valid() {
+            return true;
+        }
+
+        a.key() < b.key()
+    }
+
+    fn advance_b_for_duplicate(&mut self) -> Result<()> {
+        if self.a.is_valid() {
+            if self.b.is_valid() && self.a.key() == self.b.key() {
+                self.b.next()?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -31,18 +61,37 @@ impl<
     type KeyType<'a> = A::KeyType<'a>;
 
     fn key(&self) -> Self::KeyType<'_> {
-        unimplemented!()
+        if self.a_is_current {
+            self.a.key()
+        } else {
+            self.b.key()
+        }
     }
 
     fn value(&self) -> &[u8] {
-        unimplemented!()
+        if self.a_is_current {
+            self.a.value()
+        } else {
+            self.b.value()
+        }
     }
 
     fn is_valid(&self) -> bool {
-        unimplemented!()
+        if self.a_is_current {
+            self.a.is_valid()
+        } else {
+            self.b.is_valid()
+        }
     }
 
     fn next(&mut self) -> Result<()> {
-        unimplemented!()
+        if self.a_is_current {
+            self.a.next()?;
+        } else {
+            self.b.next()?;
+        }
+        self.advance_b_for_duplicate()?;
+        self.a_is_current = Self::a_is_current(&self.a, &self.b);
+        Ok(())
     }
 }

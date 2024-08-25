@@ -7,7 +7,7 @@ pub const TS_ENABLED: bool = false;
 // A newtype wrapper around T, where T can be borrowed as a slice of bytes.
 // Here the trait bound is that the key should be borrowable as
 // a slice of bytes
-pub struct Key<T: AsRef<[u8]>>(T);
+pub struct Key<T: AsRef<[u8]>>(pub T);
 
 // A type alias for Key, specifically when it contains reference to a byte slice.
 // The 'a lifetime parameter ensures that KeySlice doesn't outlive the data it references
